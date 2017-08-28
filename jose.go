@@ -164,15 +164,13 @@ func SignBytes(payload []byte, signingAlg string, key interface{}, options ...fu
 			cfg.Headers["typ"] = "JWT"
 		}
 
-		paloadBytes := payload
+		payloadBytes := payload
 		var header []byte
 		var signature []byte
 
 		if header, err = json.Marshal(cfg.Headers); err == nil {
-			securedInput := []byte(compact.Serialize(header, paloadBytes))
-
-			if signature, err = signer.Sign(securedInput, key); err == nil {
-				return compact.Serialize(header, paloadBytes, signature), nil
+			if signature, err = signer.Sign(payloadBytes, key); err == nil {
+				return compact.Serialize(header, payloadBytes, signature), nil
 			}
 		}
 
@@ -325,8 +323,6 @@ func verify(parts [][]byte, key interface{}) (plainText []byte, headers map[stri
 
 	header, payload, signature := parts[0], parts[1], parts[2]
 
-	secured := []byte(compact.Serialize(header, payload))
-
 	var jwtHeader map[string]interface{}
 
 	if err = json.Unmarshal(header, &jwtHeader); err != nil {
@@ -339,7 +335,7 @@ func verify(parts [][]byte, key interface{}) (plainText []byte, headers map[stri
 				return nil, nil, err
 			}
 
-			if err = verifier.Verify(secured, signature, key); err == nil {
+			if err = verifier.Verify(payload, signature, key); err == nil {
 				return payload, jwtHeader, nil
 			}
 
